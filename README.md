@@ -35,6 +35,10 @@ ASVCF_CURRENT_TMP_DIR=$(mktemp -d "ASVCF_${VCF_FILENAME##*/}_XXXXXX");
 
 ### **Get VCF files**
 
+The **vcf** data are stored on cluster in : 
+
+`/binder/anastasiia/chip-seq_signe/imputed`
+
 1. Convert from **.haps** to **.vcf.gz** : 
 
 Input data are **haps** files that were prepared by Jade and are stored in :
