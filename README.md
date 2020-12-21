@@ -31,6 +31,35 @@ ASVCF_CURRENT_TMP_DIR=$(mktemp -d "ASVCF_${VCF_FILENAME##*/}_XXXXXX");
 
 5. **Very important** : the order of the column names (sample names) must be in the same in each file, i.e. order of samples of count matrix is the same as that in vcf file.
 
+6. Before using RASQUAL, exon regions for each peakset should be assembled. Otherwise, an odd eQTL mapping result will be received by wrongly using AS counts from introns and other genes. More information could be found : https://github.com/natsuhiko/rasqual/issues/2.
+
+7. To run RASQUAL, the **samtools** and **bfctools** should be installed. To do it, I would recomment to use **conda**. 
+ #### **Install Miniconda on macOS**
+ > `Miniconda2 is for python2.7`
+ >
+ > `Miniconda3 is for python3` 
+ >
+ > To check the python version, run 
+ >```sh
+ > python --version
+ >```
+ > Go to https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html and download installer and follow the steps that are described. **Important**, for maOS, once miniconda (or anaconda) is installed, the installer prompts “Do you wish the installer to initialize Miniconda3 by running conda init?”. Type **no** and run : 
+ >```sh
+ > source <path to conda>/bin/activate
+ > conda init zsh
+ >```
+ #### **Install samtools on macOS**
+> ```sh 
+> conda install -c bioconda samtools
+>```
+> ```sh 
+> conda install -c bioconda/label/cf201901 samtools
+> ```
+#### **Install bfctools on macOS**
+> ```sh 
+> conda install -c bioconda bfctools=1.9
+>```
+
 ## **Data preparation**
 
 ### **Get VCF files**
@@ -196,7 +225,7 @@ scp -Cp -r -o ProxyCommand="ssh cluser@biocomp.psych.mpg.de nc slurmgate 22"\
 ```
 ### **Calculate count matrices**
 
-The count matrices for dex and veh cases are calculated by running R package *DiffBind*. The steps are descrideb in the attached Markdown code book. The result of the code is two text files that contains the count data for individual samples (no header). Each row represents the peakset and each column - sample. Please, rememebr that the order of the columns must be the same as in **vcf** file. The R code sorts the columns accordingly to the given order. You should have the list of ordered samples in a text file. 
+The count matrices for dex and veh cases are calculated by running R package *DiffBind*. The steps are descrideb in the attached Markdown code book that is also located in the git repository : https://github.com/AnastasiiaInna/signe_chip-seq/blob/main/02_code/allele_spec_chpseq_analysis.pdf. The result of the code is two text files that contains the count data for individual samples (no header). Each row represents the peakset and each column - sample. Please, rememebr that the order of the columns must be the same as in **vcf** file. The R code sorts the columns accordingly to the given order. You should have the list of ordered samples in a text file. 
 
 The output files are : 
 
@@ -214,8 +243,8 @@ Input data :
 - `count_mtrx_veh_for_rasqual.txt`
 - `bam_list_dex.txt`
 - `bam_list_veh.txt`
--`peakset_info_dex.txt`
--`peakset_info_veh.txt`
+- `peakset_info_dex.txt`
+- `peakset_info_veh.txt`
 
 To run RASQUAL, please clone the git repo [RASQUAL](https://github.com/natsuhiko/rasqual), following the steps in teh begining of this README and place the count matrices in the folder `rasqual/data/signe_chipseq/` and **vcf** files along with **bam** list files into the folder `data/signe_chipseq/VCF_DATA/phased/imputed/dex/` for dex or `rasqual/data/signe_chipseq/VCF_DATA/phased/imputed/veh/` for veh.
 
@@ -371,4 +400,50 @@ tabix -pf vcf $VEHVCFDIR/phased_imputed_veh_ac.vcf.gz
 >    printf "Peak start is %s and "${PEAK_START}";
 >    printf "Peak end is %s \n"${PEAK_END}";
 > done
-```
+>```
+
+The final results are written out to the text files :
+>**For dex**
+>`rasqual_result_imputed_dex_vcf_samples_order.txt`
+
+> **For veh**
+>`rasqual_result_imputed_veh_vcf_samples_order.txt`
+
+## **The location of the results**
+
+### **DiffBind results**
+
+**Github repo :**
+`https://github.com/AnastasiiaInna/signe_chip-seq`
+
+**On cluster :**
+`ngs/HiSeq_Berlin/20190924_Signe_PGoeke_ChIPseq/08_diffbind_analysis/`
+
+- `01_sample_sheets` : mapping files
+
+- `02_results` : R DiffBind pipeline results
+    * `chipseq_dex_samples.txt` : the list of dex sample names
+    * `chipseq_veh_samples.txt` : the list of veh sample names
+    * `count_mtrx_dex_for_rasqual.csv` : the count matrix for **dex** samples, the result of *DiffBind* pipeliine, include sample names as rownames
+    * `count_mtrx_dex_for_rasqual.txt` : the count matrix for **dex** samples, the result of *DiffBind* pipeliine, does **not** include sample names, the files is used by RASQUAL functions
+    * `count_mtrx_dex_for_rasqual_sample.txt` : the count matrix for **dex** subset is used to test RASQUAL
+    * `count_mtrx_veh_for_rasqual_vcf_samples_order.csv` :  the count matrix for **veh** samples, the result of *DiffBind* pipeliine, include sample names as rownames
+    * `count_mtrx_veh_for_rasqual_vcf_samples_order.txt` : the count matrix for **veh** samples, the result of *DiffBind* pipeliine, does **not** include sample names, the files is used by RASQUAL functions
+    * `dex_deseq_report.csv` : the result of DiffBind analysis, the report is used to retrieve the differentially bound sites and includes info for both **dex** and **veh**
+    * `dex_deseq_report_annotated.csv` : the same format as  `dex_deseq_report.csv` but includes also annotation 
+    * `dex_deseq_report_only_dex_echriched.csv` : the result of DiffBind analysis, the report is used to retrieve only **dex** differentially bound sites
+    * `dex_deseq_report_only_veh_echriched.csv` :  the result of DiffBind analysis, the report is used to retrieve only **veh** differentially bound sites
+    * `union_peakset.tsv` : the list of differentially bound sites
+
+### **RASQUAL results**
+
+**Github repo :**
+`https://github.com/AnastasiiaInna/rasqual`
+
+**On cluster :**
+* **vcf** files : `/binder/anastasiia/chip-seq_signe/imputed`
+* **results** : `/ngs/HiSeq_Berlin/20190924_Signe_PGoeke_ChIPseq/09_rasqual_allele_specific_binding`
+    * `rasqual_result_imputed_dex_vcf_samples_order.txt` : result table for **dex** samples, each row represents a single tested site, for meaning of the output values, please go to the RASQUAL original gir repo : https://github.com/natsuhiko/rasqual#output
+    * `rasqual_result_imputed_dex_vcf_samples_order.txt` : result table for **veh** samples, each row represents a single tested site, for meaning of the output values, please go to the RASQUAL original gir repo : https://github.com/natsuhiko/rasqual#output
+
+**Note :** if any data or results are missing on cluster, you can always find them in the github repo. If they are still missing, please text me ;)
